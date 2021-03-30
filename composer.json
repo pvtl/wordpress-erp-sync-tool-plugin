@@ -1,7 +1,7 @@
 {
     "name": "pvtl/erp-sync-tool",
     "description": "A link between Pivotal's ERP Sync Tool & WooCommerce.",
-    "homepage": "https://github.com/pvtl/pvtl-sso",
+    "homepage": "https://github.com/pvtl/erp-sync-tool-plugin",
     "license": "Private",
     "authors": [
       {
