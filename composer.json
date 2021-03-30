@@ -1,0 +1,17 @@
+{
+    "name": "pvtl/erp-sync-tool",
+    "description": "A link between Pivotal's ERP Sync Tool & WooCommerce.",
+    "homepage": "https://github.com/pvtl/pvtl-sso",
+    "license": "Private",
+    "authors": [
+      {
+        "name": "Liam Southwell",
+        "email": "liam.s@pvtl.io",
+        "homepage": "https://www.pivotalagency.com.au/"
+      }
+    ],
+    "type": "wordpress-plugin",
+    "require": {
+      "php": ">=7.3"
+    }
+  }
