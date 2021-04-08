@@ -49,7 +49,7 @@ class ErpSyncTool {
             $user = new \WP_User( $customer_id );
 
             // Remove role
-            $user->set_role( $_GET['user_role'] );
+            $user->add_role( $_GET['user_role'] );
         }
     }
 
