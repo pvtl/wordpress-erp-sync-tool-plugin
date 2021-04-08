@@ -31,14 +31,33 @@ class ErpSyncTool {
 	public function __construct() 
     {
 		add_filter( 'woocommerce_rest_customer_query', array( $this, 'add_updated_since_filter_to_rest_api' ), 100, 2 );
-        add_action( 'woocommerce_created_customer', array ( $this, 'woocommerce_send_email_on_rest_create'), 10, 2 );
+        add_action( 'woocommerce_created_customer', array ( $this, 'woocommerce_customer_creation'), 10, 2 );
+    }
+
+    public function woocommerce_customer_creation( $customer_id )
+    {
+        $this->send_email_on_customer_create();
+        $this->set_customer_user_role_on_create( $customer_id );
+    }
+
+    /**
+     * Sets the customer role on craete 
+     */
+    private function set_customer_user_role_on_create( $customer_id )
+    {
+        if (isset($_GET['user_role'])) {
+            $user = new \WP_User( $customer_id );
+
+            // Remove role
+            $user->set_role( $_GET['user_role'] );
+        }
     }
 
     /**
      * Restricts sending of emails for new customer accounts if the 
      * 'email_on_create' param is present on the get params of the request. 
      */
-    public function woocommerce_send_email_on_rest_create( $customerId )
+    public function send_email_on_customer_create()
     {
         if (!isset($_GET['email_on_create'])) {
             return;
