@@ -32,6 +32,21 @@ class ErpSyncTool {
     {
 		add_filter( 'woocommerce_rest_customer_query', array( $this, 'add_updated_since_filter_to_rest_api' ), 100, 2 );
         add_action( 'woocommerce_created_customer', array ( $this, 'woocommerce_customer_creation'), 10, 2 );
+
+        add_filter( "woocommerce_rest_shop_order_object_query", array ( $this, 'add_orders_updated_since_filter' ) , 10, 2 );
+    }
+
+    /**
+     * Allows the 'updated_since filter on orders
+     */
+    function add_orders_updated_since_filter( $prepared_args ) {
+        if (isset($_GET['updated_since'])) {
+            $prepared_args['date_query'][] = array(
+                'after' => $_GET['updated_since'],
+                'column' => 'post_modified' 
+            );
+        }
+        return $prepared_args;
     }
 
     public function woocommerce_customer_creation( $customer_id )
