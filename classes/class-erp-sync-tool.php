@@ -39,6 +39,7 @@ class Erp_Sync_Tool {
         new Erp_Sync_Tool_Settings();
         
         add_action('woocommerce_new_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1);
+        add_action('woocommerce_update_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1);
 
 		add_filter( 'woocommerce_rest_customer_query', array( $this, 'add_updated_since_filter_to_rest_api' ), 100, 2 );
         add_action( 'woocommerce_created_customer', array ( $this, 'woocommerce_customer_creation'), 10, 2 );
@@ -49,8 +50,6 @@ class Erp_Sync_Tool {
     public function dispatch_order_sync_on_order( $order_id )
     {
         $options = get_option( 'erp_sync_tool_options' );
-
-
 
         foreach ($options['services'] as $service) {
             if (strpos($service['service_type'], 'OrderSync') !== false) {
