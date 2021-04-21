@@ -4,8 +4,6 @@ namespace App\Plugins\Pvtl\Classes;
 
 class Erp_Sync_Tool_Settings {
 
-    private $api_base = 'http://erp-sync-tool.php80.pub.localhost/api/v1/';
-
 	/**
 	 * Constructor
 	 */
@@ -76,7 +74,7 @@ class Erp_Sync_Tool_Settings {
                 $updatable_service['settings'] = array_merge($updatable_service['settings'], $service_settings);
 
                 $result = wp_remote_post( 
-                    $this->api_base . 'services/' . $id, 
+                    Erp_Sync_Tool::$api_base . 'services/' . $id, 
                     array(
                         'method' => 'PATCH',
                         'headers' => array( 
@@ -114,12 +112,20 @@ class Erp_Sync_Tool_Settings {
      */
     public function register_settings() 
     {
-        register_setting( 'erp_sync_tool_settings', 'erp_sync_tool_options', array( $this, 'erp_sync_tool_options_validate') );
+        global $pagenow;
         $options = get_option( 'erp_sync_tool_options' );
-        $this->addApiSettings( $options );
+
+        register_setting( 'erp_sync_tool_settings', 'erp_sync_tool_options', array( $this, 'erp_sync_tool_options_validate') );
+        $this->add_api_settings( $options );
 
         $options = get_option( 'erp_sync_tool_options' );
-        if ( $_SERVER['REQUEST_METHOD'] === 'GET' && $options && !empty( $options['api_key'] ) && !empty( $options['client_name'] ) ) {
+        if ( 
+            $_SERVER['REQUEST_METHOD'] === 'GET' 
+            && $_GET['page'] === 'erp-sync-tool' 
+            && $options 
+            && !empty( $options['api_key'] ) 
+            && !empty( $options['client_name'] ) 
+        ) {
             $this->refresh_service_settings( $options );
             $this->add_service_settings( $options );
         }
@@ -215,7 +221,7 @@ class Erp_Sync_Tool_Settings {
         }
     }
 
-    public function addApiSettings( $options )
+    public function add_api_settings( $options )
     {
         add_settings_section( 'api_settings', 'API Settings', array( $this, 'api_section_text' ), 'erp_sync_tool' );
         add_settings_field( 'erp_sync_tool_setting_api_key', 'API Key', array( $this, 'api_key_setting_field'), 'erp_sync_tool', 'api_settings', $options );
@@ -225,7 +231,7 @@ class Erp_Sync_Tool_Settings {
     public function refresh_service_settings( $options )
     {
         $result = wp_remote_get( 
-            $this->api_base .'services?client=' . $options['client_name'], 
+            Erp_Sync_Tool::$api_base .'services?client=' . $options['client_name'], 
             array(
                 'headers' => array ( 
                     'Accept' => 'Application/json',
@@ -234,7 +240,7 @@ class Erp_Sync_Tool_Settings {
             ) 
         );
 
-        if ($result['response']['code'] === 200) {
+        if (!is_wp_error( $result ) && $result['response']['code'] === 200) {
             $options['services'] = json_decode( $result['body'], true );
 
             update_option( 'erp_sync_tool_options', $options, false );

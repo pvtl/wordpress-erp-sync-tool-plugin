@@ -7,6 +7,8 @@ namespace App\Plugins\Pvtl\Classes;
  */
 class Erp_Sync_Tool {
 
+    public static $api_base = 'http://erp-sync-tool.php80.pub.localhost/api/v1/';
+
 	/**
 	 * The single instance of the class.
 	 *
@@ -36,16 +38,39 @@ class Erp_Sync_Tool {
     {
         new Erp_Sync_Tool_Settings();
         
+        add_action('woocommerce_new_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1);
+
 		add_filter( 'woocommerce_rest_customer_query', array( $this, 'add_updated_since_filter_to_rest_api' ), 100, 2 );
         add_action( 'woocommerce_created_customer', array ( $this, 'woocommerce_customer_creation'), 10, 2 );
 
         add_filter( "woocommerce_rest_shop_order_object_query", array ( $this, 'add_orders_updated_since_filter' ) , 10, 2 );
     }
 
+    public function dispatch_order_sync_on_order( $order_id )
+    {
+        $options = get_option( 'erp_sync_tool_options' );
+
+
+
+        foreach ($options['services'] as $service) {
+            if (strpos($service['service_type'], 'OrderSync') !== false) {
+                wp_remote_get( 
+                    Erp_Sync_Tool::$api_base .'sync/' . $service['webhook'], 
+                    array(
+                        'headers' => array ( 
+                            'Accept' => 'Application/json',
+                            'Authorization' => 'Bearer ' . $options['api_key'],
+                        )
+                    ) 
+                );
+            }
+        }
+    }
+
     /**
      * Allows the 'updated_since filter on orders
      */
-    function add_orders_updated_since_filter( $prepared_args ) {
+    public function add_orders_updated_since_filter( $prepared_args ) {
         if (isset($_GET['updated_since'])) {
             $prepared_args['date_query'][] = array(
                 'after' => $_GET['updated_since'],
