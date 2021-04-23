@@ -34,7 +34,7 @@ function ERP() { // phpcs:ignore WordPress.NamingConventions
  * Author URI:      http://pivotal.agency
  * Text Domain:     erp-sync-tool
  * Domain Path:     /languages
- * Version:         0.0.1
+ * Version:         0.0.2
  *
  * @package         ERP_SYNC_TOOL
  */
