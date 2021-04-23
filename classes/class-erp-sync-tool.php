@@ -2,12 +2,9 @@
 
 namespace App\Plugins\Pvtl\Classes;
 
-/**
- * Pivotal Agency Single Sign On Plugin
- */
 class Erp_Sync_Tool {
 
-    public static $api_base = 'http://erp-sync-tool.php80.pub.localhost/api/v1/';
+    public static $api_base = 'https://stage.erptool.neon.accounts.pvtl.io/api/v1/';
 
 	/**
 	 * The single instance of the class.
