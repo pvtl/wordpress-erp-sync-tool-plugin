@@ -36,15 +36,113 @@ class Erp_Sync_Tool {
 	 */
 	public function __construct() 
     {
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        error_reporting(E_ALL);
         new Erp_Sync_Tool_Settings();
         
-        add_action('woocommerce_new_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1);
-        add_action('woocommerce_update_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1);
+        add_action( 'woocommerce_new_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1 );
+        add_action( 'woocommerce_update_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1 );
 
 		add_filter( 'woocommerce_rest_customer_query', array( $this, 'add_updated_since_filter_to_rest_api' ), 100, 2 );
         add_action( 'woocommerce_created_customer', array ( $this, 'woocommerce_customer_creation'), 10, 2 );
 
-        add_filter( "woocommerce_rest_shop_order_object_query", array ( $this, 'add_orders_updated_since_filter' ) , 10, 2 );
+        add_filter( "woocommerce_rest_shop_order_object_query", array ( $this, 'add_orders_updated_since_filter' ), 10, 2 );
+
+        add_action( 'rest_api_init', array( $this, 'format_wholesale_user_pricing'), 10, 2 ); // TODO: Remove from this plugin, this is ST Food Co specific
+        add_action( 'woocommerce_rest_insert_product_object', array( $this, 'add_wholesale_user_pricing' ), 10, 2 );
+    }
+
+
+    public function add_wholesale_user_pricing( $product, $request )
+    {
+        $meta = get_post_meta($product->get_id());
+        $wholesale_pricing = isset($meta['wholesale_multi_user_pricing']) 
+            ? unserialize($meta['wholesale_multi_user_pricing'][0])
+            : array();
+
+        $json = $request->get_json_params();
+
+        $base = 'wholesale_user_pricing_';
+
+        for ($i = 1; $i <= 9; $i++) { // We want 1 - 9 pricing tiers
+            if (isset($json[$base . 'tier-' . $i])) {
+                $tier_pricing = [
+                    'slug' => 'tier-' . $i,
+                    'discount_type' => 'fixed',
+                    'min_quatity' => 1, // Yes, quatity. Not quantity.
+                    'wholesale_price' => $json[$base . 'tier-' . $i]
+                ];
+                
+                // Cycle through our wholesale pricing to see if we have this tier already
+                $pricing_key = false;
+
+                foreach($wholesale_pricing as $key => $pricing) {
+                    if ($pricing['slug'] === 'tier-' . $i) {
+                        $pricing_key = $key;
+                    }
+                }
+
+                if ($pricing_key === false) {
+                    // We need to find the ID of the pricing tier with this slug
+                    $term = get_term_by( 'slug', 'tier-' . $i, 'wholesale_user_roles' );
+                    if ($term) {
+                        // Set the wholesale pricing key by the term id (this is how the plugin works)
+                        $wholesale_pricing[$term->term_id] = $tier_pricing;
+                    } else {
+                        // We didn't find a matching slug term, so skip
+                        continue;
+                    }
+                } else {
+                    $wholesale_pricing[$pricing_key] = $tier_pricing;
+                }
+            }
+        }
+
+        update_post_meta( 
+            $product->get_id(), 
+            'wholesale_multi_user_pricing', 
+            $wholesale_pricing
+        );
+    }
+
+    /**
+     * TODO: Remove from this plugin, this is ST Food Co specific
+     */
+    public function format_wholesale_user_pricing()
+    {
+        $base = 'wholesale_user_pricing_';
+        for ($i = 1; $i <= 9; $i++) { // We want 1 - 9 pricing tiers
+            register_rest_field( 
+                'product', 
+                $base . 'tier-' . $i, 
+                array(
+                    'get_callback' => function( $post_arr ) use ($i) {
+                        foreach($post_arr['meta_data'] as $meta_data) {
+                            // Find wholesaler meta data
+                            if ($meta_data->key === 'wholesale_multi_user_pricing') {
+                                foreach($meta_data->value as $multi_user_pricing) {
+                                    if ($multi_user_pricing['slug'] === 'tier-' . $i) {
+                                        switch ($multi_user_pricing['discount_type']) {
+                                            case 'percent':
+                                                $price = $post_arr['price'] * (1 - ($multi_user_pricing['wholesale_price'] / 100));
+                                                break;
+                                            case 'fixed':
+                                            default:
+                                                $price = $multi_user_pricing['wholesale_price'];
+                                                break;
+                                        }
+                                        return (string) number_format($price, 2, '.', '');
+                                    }
+                                }
+                            }
+                        }
+                        return $post_arr['price'];
+                    },
+                ) 
+            );
+        }
+
     }
 
     public function dispatch_order_sync_on_order( $order_id )
