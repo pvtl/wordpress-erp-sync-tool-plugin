@@ -36,9 +36,6 @@ class Erp_Sync_Tool {
 	 */
 	public function __construct() 
     {
-        ini_set('display_errors', 1);
-        ini_set('display_startup_errors', 1);
-        error_reporting(E_ALL);
         new Erp_Sync_Tool_Settings();
         
         add_action( 'woocommerce_new_order', array( $this, 'dispatch_order_sync_on_order' ), 10, 1 );
@@ -65,7 +62,7 @@ class Erp_Sync_Tool {
 
         $base = 'wholesale_user_pricing_';
 
-        for ($i = 1; $i <= 9; $i++) { // We want 1 - 9 pricing tiers
+        for ($i = 1; $i <= 10; $i++) { // We want 1 - 9 pricing tiers
             if (isset($json[$base . 'tier-' . $i])) {
                 $tier_pricing = [
                     'slug' => 'tier-' . $i,
@@ -112,7 +109,7 @@ class Erp_Sync_Tool {
     public function format_wholesale_user_pricing()
     {
         $base = 'wholesale_user_pricing_';
-        for ($i = 1; $i <= 9; $i++) { // We want 1 - 9 pricing tiers
+        for ($i = 1; $i <= 10; $i++) { // We want 1 - 9 pricing tiers
             register_rest_field( 
                 'product', 
                 $base . 'tier-' . $i, 
@@ -125,11 +122,16 @@ class Erp_Sync_Tool {
                                     if ($multi_user_pricing['slug'] === 'tier-' . $i) {
                                         switch ($multi_user_pricing['discount_type']) {
                                             case 'percent':
-                                                $price = $post_arr['price'] * (1 - ($multi_user_pricing['wholesale_price'] / 100));
+                                                $wholesale_price = empty($multi_user_pricing['wholesale_price'])
+                                                    ? 0
+                                                    : $multi_user_pricing['wholesale_price'];
+                                                $price = $post_arr['price'] * (1 - ($wholesale_price / 100));
                                                 break;
                                             case 'fixed':
                                             default:
-                                                $price = $multi_user_pricing['wholesale_price'];
+                                                $price = !empty($multi_user_pricing['wholesale_price'])
+                                                    ? $multi_user_pricing['wholesale_price']
+                                                    : $post_arr['price'];
                                                 break;
                                         }
                                         return (string) number_format($price, 2, '.', '');
