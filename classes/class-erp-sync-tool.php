@@ -4,7 +4,7 @@ namespace App\Plugins\Pvtl\Classes;
 
 class Erp_Sync_Tool {
 
-    public static $api_base = 'https://stage.erptool.neon.accounts.pvtl.io/api/v1/';
+    public static $api_base = 'https://erptool.neon.accounts.pvtl.io/api/v1/';
 
 	/**
 	 * The single instance of the class.
@@ -61,6 +61,28 @@ class Erp_Sync_Tool {
             // Get an image name so we can avoid adding duplicates
             $image_name = isset($json['image_name']) ? $json['image_name'] : '';
 
+            // Get current images and check for same nam
+            $query_args = array(
+                'post_type' => 'attachment',
+                'posts_per_page' => -1,
+                'post_status' => 'any',
+                'post_parent' => $post_id
+            );
+
+            $current_images = get_posts( $args );
+
+            foreach ( $current_images as $image ) {
+                // If we already have this image (title) then skip out and don't add the photo.
+
+
+                // TODO: Check that the title is being accessed correctly
+                if ( $image->title === $image_name && $image_name !== '' ) {
+                    return;
+                }
+            }
+
+
+
             // Sideload image & add to media library
             $media = media_sideload_image( 
                 $json['image'], 
@@ -70,15 +92,9 @@ class Erp_Sync_Tool {
             
             // If we uploaded an image
             if(!empty($media) && !is_wp_error( $media )){
-                $args = array(
-                    'post_type' => 'attachment',
-                    'posts_per_page' => -1,
-                    'post_status' => 'any',
-                    'post_parent' => $post_id
-                );
 
                 // Grab the new image
-                $attachments = get_posts( $args );
+                $attachments = get_posts( $query_args );
 
                 if( isset( $attachments ) && is_array( $attachments ) ){
                     foreach($attachments as $attachment){
