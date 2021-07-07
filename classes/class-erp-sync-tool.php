@@ -135,7 +135,7 @@ class Erp_Sync_Tool {
         if (isset($_GET['updated_since'])) {
             $prepared_args['date_query'][] = array(
                 'after' => $_GET['updated_since'],
-                'column' => 'post_modified' 
+                'column' => 'post_modified_gmt' 
             );
         }
         return $prepared_args;
