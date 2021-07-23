@@ -122,6 +122,7 @@ class Erp_Sync_Tool_Settings {
         $options = get_option( 'erp_sync_tool_options' );
         if ( 
             $_SERVER['REQUEST_METHOD'] === 'GET' 
+            && isset($_GET['page'])
             && $_GET['page'] === 'erp-sync-tool' 
             && $options 
             && !empty( $options['api_key'] ) 
