@@ -7,7 +7,7 @@
  * Author URI:      http://pivotal.agency
  * Text Domain:     erp-sync-tool
  * Domain Path:     /languages
- * Version:         0.0.6
+ * Version:         0.0.7
  *
  * @package         ERP Sync Tool
  */

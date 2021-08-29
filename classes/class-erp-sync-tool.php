@@ -114,8 +114,9 @@ class Erp_Sync_Tool {
     
             foreach ($options['services'] as $service) {
                 if (strpos($service['service_type'], 'OrderSync') !== false) {
+                    $root = isset($options['root_url']) ? $options['root_url'] : Erp_Sync_Tool::$api_base;
                     wp_remote_get( 
-                        Erp_Sync_Tool::$api_base .'sync/' . $service['webhook'], 
+                        $root . 'sync/' . $service['webhook'], 
                         array(
                             'headers' => array ( 
                                 'Accept' => 'Application/json',
